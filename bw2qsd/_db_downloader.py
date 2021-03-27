@@ -189,21 +189,18 @@ class DataDownloader:
             sp.write_database()
         else:
             print(f'There are {unlinked} unlinked exchanges, would you like to show all unlinked exchanges?')
-            if input('[y]/[n]') in ('y', 'yes', 'Y', 'Yes', 'YES'):
-            # if input('[y]/[n]') in {'y', ''}:
+            if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
                  for x in sp.unlinked:
                      print(x)
 
             print(f'Continue to write database {db_name}?')            
-            if input('[y]/[n]') in ('y', 'yes', 'Y', 'Yes', 'YES'):
-                  # if input('[y]/[n] ') in {'y', ''}:
+            if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
                 print ('Deleting exchanges with zero amount...')
                 for ds in sp.data:
                     ds['exchanges'] = [exc for exc in ds['exchanges'] if (exc['amount'] or exc['uncertainty type'] != 0)]
                 
                 print ('Drop unlinked exchanges?')
-                if input('[y]/[n]') in ('y', 'yes', 'Y', 'Yes', 'YES'):
-                # if input('[y]/[n] ') in {'y', ''}:
+                if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
                     try:
                         sp.apply_strategies([strategies.generic.drop_unlinked])  #sp.drop_unlinked(i_am_reckless=True)
                         sp.statistics()

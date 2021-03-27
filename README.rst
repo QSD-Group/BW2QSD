@@ -38,7 +38,7 @@ NOT READY YET
 
 Author
 ------
-Yalin Li: @yalinli2; `email <zoe.yalin.li@gmail.com>`_
+Yalin Li: `@yalinli2 <https://github.com/yalinli2>`_; `email <zoe.yalin.li@gmail.com>`_
 
 
 License information

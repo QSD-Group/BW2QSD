@@ -12,7 +12,7 @@ https://github.com/QSD-Group/BW2QSD/blob/master/LICENSE.txt
 for license details.
 '''
 
-import pkg_resources, sys
+import pkg_resources, sys, os
 try:
     __version__ = pkg_resources.get_distribution('bw2qsd').version
 except pkg_resources.DistributionNotFound:
@@ -24,11 +24,10 @@ try:
     import brightway2 as bw2
 except Exception as e:
     name, msg = str(sys.exc_info()[0]), str(sys.exc_info()[1])
-    # breakpoint()
     if 'ImportError' in name and "cannot import name 'databases'" in msg:
-            raise BW2Error('This error is due to an outdated pickle file, ' \
-                            'to get more instructions, update your ``bw2data`` package ' \
-                            'according to https://github.com/brightway-lca/brightway2-data/commit/9c52e76c84bfa7d3d9719da152c0616d4039a3c3.')
+        raise BW2Error('This error is due to an outdated pickle file, ' \
+                        'to get more instructions, update your ``bw2data`` package ' \
+                        'according to https://github.com/brightway-lca/brightway2-data/commit/9c52e76c84bfa7d3d9719da152c0616d4039a3c3.')
     elif 'PickleError' in name and 'setups.pickle' in msg:
         print('\n')
         print('===================================================================')
@@ -38,9 +37,22 @@ except Exception as e:
         # pass
         print(e, '\n')
     
-        print('Would you like to remove the file?')
+        print('Would you like to automatically remove the file? ' \
+              'If yes, the file will be permanently removed ' \
+              '(i.e., cannot be recovered from Trash or Recycle Bin).')
+        if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
+             path = msg.split("'")[-2]
+             if not 'setups.pickle' in path:
+                 print('\nError in parsing directory, for cautious purpose, ' \
+                       f'please mannual remove the file in {msg} (always backup).\n')
+                 raise e
+             else:
+                 os.remove(path)
+                 print('\nFile successfully removed. Please rerun the code.\n')
+                 sys.exit()
     
-        raise e
+        else:
+            raise e
     else:
         raise e
 
