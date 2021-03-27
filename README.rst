@@ -1,13 +1,13 @@
 ====================================================
 BW2QSD: Bridging Brightway2 and QSD packages for LCA
 ====================================================
-..
-	.. image:: https://img.shields.io/pypi/l/exposan?color=blue&logo=UIUC&style=flat
-	   :target: https://github.com/QSD-Group/EXPOsan/blob/master/LICENSE.txt
-	.. image:: https://img.shields.io/pypi/pyversions/exposan?style=flat
-	   :target: https://pypi.python.org/pypi/exposan
-	.. image:: https://img.shields.io/pypi/v/exposan?style=flat&color=blue
-	   :target: https://pypi.org/project/exposan/
+
+.. image:: https://img.shields.io/pypi/l/exposan?color=blue&logo=UIUC&style=flat
+   :target: https://github.com/QSD-Group/BW2QSD/blob/master/LICENSE.txt
+.. image:: https://img.shields.io/pypi/pyversions/bw2qsd?style=flat
+   :target: https://pypi.python.org/pypi/bw2qsd
+.. image:: https://img.shields.io/pypi/v/bw2qsd?style=flat&color=blue
+   :target: https://pypi.org/project/bw2qsd/
 
 
 What is ``BW2QSD``?
@@ -17,23 +17,20 @@ What is ``BW2QSD``?
 
 Installation
 ------------
-NOT READY YET
+The package can be downloaded from `PyPI <https://pypi.org/project/bw2qsd/>`_.
 
-..
-	The package can be downloaded from `PyPI <https://pypi.org/project/bw2qsd/>`_.
+If you use pip:
 
-	If you use pip:
+.. code:: bash
 
-	.. code:: bash
-
-	    pip install bw2qsd
+    pip install bw2qsd
 
 
-	To get the git version (use the depth flag to choose how many commit histories you want to clone):
+To get the git version (use the depth flag to choose how many commit histories you want to clone):
 
-	.. code:: bash
+.. code:: bash
 
-	    git clone https://github.com/QSD-Group/BW2QSD.git --depth=1
+    git clone https://github.com/QSD-Group/BW2QSD.git --depth=1
 
 
 Author

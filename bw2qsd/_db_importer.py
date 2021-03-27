@@ -29,15 +29,16 @@ class DataImporter:
     
     Tips
     ----
-    [1] Basic steps:
+    Basic steps:
         [1] Load database (you can only load one at a time).
         [2] Load indicators (you can load multiple).
         [3] Load activities (you can load multiple).
 
-    [2] If you run into an ``ImportError`` similar to
-    "cannot import name 'databases' from 'bw2data'", this `post <https://stackoverflow.com/questions/60542566/cannot-anymore-import-brightway2-importerror>`_
-    will probably help you.
-    For Marc users, the "Brightway3" directory is under "Library/Application Support/Brightway3 ".
+
+    .. note::
+        
+        You need to first download the database using :class:`DataDownloader`.
+
 
     See Also
     --------
@@ -66,7 +67,8 @@ class DataImporter:
         db_lower = database.lower()
         
         if db_lower not in bw2.databases:
-            raise ValueError(f'Database "{database}" not available.')
+            raise ValueError(f'Database "{database}" not available. ' \
+                             'Please first download the data using `DataDownloader`.')
         else:
             self._database = db = bw2.Database(database)
 
