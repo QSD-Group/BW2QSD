@@ -14,23 +14,8 @@ for license details.
 
 import sys, os
 import pandas as pd
+import brightway2 as bw2
 from bw2data.backends.peewee import Activity
-from . import BW2Error
-
-try:
-    import brightway2 as bw2
-except Exception as e:
-    if type(e).__name__ == 'ImportError':
-        if e.message == "annot import name 'databases'":
-            raise BW2Error('This error is due to an outdated pickle file, ' \
-                           'to get more instructions, update your ``bw2data`` package ' \
-                           'according to https://github.com/brightway-lca/brightway2-data/commit/9c52e76c84bfa7d3d9719da152c0616d4039a3c3.')
-    if type(e).__name__ == 'PickleError' and 'setups.pickle' in str(e):
-        print('You can fix the following error by deleting the setups.pickle file.')
-        raise e
-    else:    
-        raise e
-    
 
 isinstance = isinstance
 
@@ -65,6 +50,8 @@ class DataImporter:
         self._database = None
         self._indicators = set()
         self._activities = {}
+        self._ind_aliases = {}
+        self._act_aliases = {}
 
 
     def load_database(self, database):
@@ -75,11 +62,14 @@ class DataImporter:
         ----------
         database: str
             Name of the database.        
-        '''
-        if not database:
-            raise ValueError(f'Database "{database}" not available.')
+        '''        
+        db_lower = database.lower()
         
-        self._database = db = bw2.Database(database)
+        if db_lower not in bw2.databases:
+            raise ValueError(f'Database "{database}" not available.')
+        else:
+            self._database = db = bw2.Database(database)
+
         print(f'Database {db} with {len(db)} inventories has been loaded.')
 
         
@@ -89,23 +79,22 @@ class DataImporter:
         
         Parameters
         ----------
+        add : bool
+            Whether to add the indicators for data importing.
+            If False, a dict of the indicators that satisfy the search criteria
+            will be returned.
         method: str
             Impact assessment method of the indicator (e.g., TRACI).
         category: str
             Category of the indicator (e.g., environmental impact).
         indicator: str
             Name of the indicator (e.g., global warming).
-        add : bool
-            Whether to add the indicators for data importing.
-            If False, a dict of the indicators that satisfy the search criteria
-            will be returned.
 
-        
-        .. note::
-
-            Leave the method, category, or indicator field as blank (i.e., '')
-            if want all of the options. E.g., load_indicators() will return
-            all indicators available in the package (800+ in total).
+        Tips
+        ----
+        Leave the method, category, or indicator field as blank (i.e., '')
+        if want all of the options. E.g., load_indicators() will return
+        all indicators available in the package (800+ in total).
         
         '''
         
@@ -184,9 +173,13 @@ class DataImporter:
             try:
                 activities = [self.activities[activity]]
             except KeyError:
-                activities = self.database.search(activity)
-                if not activities:
-                    raise ValueError(f'No search results for "{activity}".')
+                try:
+                    activity = self._act_aliases[activity]
+                    activities = [self.activities[activity]]
+                except KeyError:
+                    activities = self.database.search(activity)
+                    if not activities:
+                        raise ValueError(f'No search results for "{activity}".')
         
         else:
             if not isinstance(activity, Activity):
@@ -194,9 +187,14 @@ class DataImporter:
 
         for act in activities:
             act_dct = act.as_dict()
+            name = act_dct['name']
             df = pd.DataFrame(
-                data={act_dct['name']: [v for v in act_dct.values()]},
+                data={name: [v for v in act_dct.values()]},
                 index=[k for k in act_dct.keys()])
+            
+            # if name in self._act_aliases.values():
+                
+            
             print(f'{df.fillna("N/A")}\n')
         
 
@@ -224,6 +222,21 @@ class DataImporter:
         else:
             raise ValueError('kind can only be "indicator" or "activity", ' \
                              f'not "{kind}".')
+        
+    def add_alias(self, kind, alias_dct):
+        '''
+        Add alternative names for loaded indicators or activities.
+        
+        Parameters
+        ----------
+        kind : str
+            Can be "indicator" or "activity".
+        alias_dct : dict    
+            Keys should be the entries in the `indicators` attribute or the
+            keys of the `activities` attribute, values should be the aliases.
+            
+        '''
+        
         
 
     def get_CF(self, indicators=(), activities=(), show=False, file=''):
