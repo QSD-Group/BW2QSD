@@ -10,8 +10,8 @@ This module is developed by:
 Part of this module is based on the BioSTEAM-LCA package:
 https://github.com/scyjth/biosteam_lca
 
-This module is under the University of Illinois/NCSA Open Source License. Please refer to
-https://github.com/QSD-Group/BW2QSD/blob/master/LICENSE.txt
+This module is under the University of Illinois/NCSA Open Source License.
+Please refer to https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
 for license details.
 '''
 

@@ -8,7 +8,7 @@ This module is developed by:
     Yalin Li <zoe.yalin.li@gmail.com>
 
 This module is under the University of Illinois/NCSA Open Source License. Please refer to
-https://github.com/QSD-Group/BW2QSD/blob/master/LICENSE.txt
+https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
 for license details.
 '''
 
@@ -17,7 +17,7 @@ from setuptools import setup
 setup(
     name='bw2qsd',
     packages=['bw2qsd'],
-    version='0.0.1',
+    version='0.0.2',
     license='UIUC',
     author='Yalin Li',
     author_email='zoe.yalin.li@gmail.com',
@@ -55,5 +55,5 @@ setup(
                  'Programming Language :: Python :: 3.7',
                  'Programming Language :: Python :: 3.8',
                  ],
-    keywords=['brightway2', 'quantitative sustainable design', 'life cycle assessment', 'database importer'],
+    keywords=['Brightway2', 'quantitative sustainable design', 'life cycle assessment', 'database importer'],
 )
