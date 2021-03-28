@@ -16,6 +16,7 @@ for license details.
 '''
 
 import os, appdirs, tempfile, subprocess, requests
+import brightway2 as bw2
 import eidl
 from zipfile import ZipFile
 from bw2io import importers, strategies
@@ -25,7 +26,7 @@ from bw2data.utils import download_file
 
 '''
 TODO:
-    Add forwast
+    Add forwast, USLCI, etc.
 '''
 
 __all__ = ('DataDownloader',)
@@ -39,18 +40,17 @@ class DataDownloader:
         `forwarst <https://lca-net.com/projects/show/forwast/>`_ (NOT YET READY)
         `USLCI <>`_ (NOT YET READY)
     
-    Parameters
-    ----------
-    path : str
-        Path for database storage, a new directory "database" will be created under the given path,
-        default to current working directory.
-    
-    
     '''
+
+    # Parameters
+    # ----------
+    # path : str
+    #     Path for database storage, a new directory "database" will be created under the given path,
+    #     default to current working directory.
     
-    def __init__(self, path=''):
-        path = path if path else os.path.abspath(os.path.dirname(__file__))
-        self._db_path = os.path.join(path,'database')
+    # def __init__(self, path=''):
+    #     path = path if path else os.path.abspath(os.path.dirname(__file__))
+    #     self._db_path = os.path.join(path, 'database')
         
     def download_ecoinvent(self, path='', store_download=True):
         '''
@@ -69,12 +69,12 @@ class DataDownloader:
         store_download : bool
             Whether to store the downloaded file.
         
-        Tips
-        ----
+        Tip
+        ---
         The following system models are supported by ecoinvent [1]_:
             
-            [1] cutoff: Allocation, cut-off by classification. 
-            For users new to LCI databases, ecoinvent recommends using the 
+            [1] cutoff: Allocation, cut-off by classification. \
+            For users new to LCI databases, ecoinvent recommends using the \
             cut-off system model when starting to work with ecoinvent version 3.
             
             [2] apos: Allocation at the point of substitution.
@@ -83,6 +83,7 @@ class DataDownloader:
 
 
         .. note::
+            
             When selecting system models, you may run into both "cut-off" and "cutoff"
             models, choose "cutoff", "cut-off" is a bug in ecoinvent.
 
@@ -211,6 +212,11 @@ class DataDownloader:
                 raise Warning ('Stopped writing to backend SQLite3 database')      
         return datasets, exchanges
 
+
+    @property
+    def available_databases(self):
+        '''All databases that have been loaded into ``Brightway2``.'''
+        return bw2.databases
 
 
 

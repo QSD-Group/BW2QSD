@@ -33,9 +33,18 @@ To get the git version (use the depth flag to choose how many commit histories y
     git clone https://github.com/QSD-Group/BW2QSD.git --depth=1
 
 
-Author
-------
-Yalin Li: `@yalinli2 <https://github.com/yalinli2>`_; `email <zoe.yalin.li@gmail.com>`_
+Tutorial
+--------
+Please refer to the jupyter notebook within the package for how to get started.
+
+
+Author and Contributing
+-----------------------
+Author:
+
+	Yalin Li: `@yalinli2 <https://github.com/yalinli2>`_; `email <zoe.yalin.li@gmail.com>`_
+
+Please refer to the `Contributing to QSDsan <https://qsdsan.readthedocs.io/en/latest/CONTRIBUTING.html>`_ section of the documentation for instructions and guidelines.
 
 
 License information

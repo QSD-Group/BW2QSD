@@ -27,11 +27,14 @@ class DataImporter:
     ``Brightway2``, users can choose different life cycle inventory (LCI) databases
     and life cycle impact assessment (LCIA).
     
-    Tips
-    ----
+    Tip
+    ---
     Basic steps:
+        
         [1] Load database (you can only load one at a time).
+        
         [2] Load indicators (you can load multiple).
+        
         [3] Load activities (you can load multiple).
 
 
@@ -92,8 +95,8 @@ class DataImporter:
         indicator: str
             Name of the indicator (e.g., global warming).
 
-        Tips
-        ----
+        Tip
+        ---
         Leave the method, category, or indicator field as blank (i.e., '')
         if want all of the options. E.g., load_indicators() will return
         all indicators available in the package (800+ in total).
@@ -123,15 +126,15 @@ class DataImporter:
         ----------
         string : str
             Search string.
-        limit : int
-            Maximum number of search results to return.
         add : bool
             Whether to add the activities for data importing.
             If False, a dict of the activities that satisfy the search criteria
             will be returned.
+        limit : int
+            Maximum number of search results to return.
         show : bool
             Whether to print the detailed information associated with the activities.
-        **kwargs :
+        kwargs :
             Other keyword arguments that will be passed to ```Brightway2-data``.
         
         See Also
@@ -186,18 +189,24 @@ class DataImporter:
         else:
             if not isinstance(activity, Activity):
                 raise TypeError(f'The input activity type "{type(activity).__name__}" is not valid.')
+            else:
+                activities = [activity]
 
+        dfs = []
         for act in activities:
             act_dct = act.as_dict()
             name = act_dct['name']
             df = pd.DataFrame(
                 data={name: [v for v in act_dct.values()]},
                 index=[k for k in act_dct.keys()])
-            
-            # if name in self._act_aliases.values():
-                
-            
             print(f'{df.fillna("N/A")}\n')
+            
+            dfs.append(df)
+        
+        if len(dfs) == 1:
+            return df        
+        else:
+            return dfs
         
 
     def remove(self, kind, keys):
@@ -241,7 +250,7 @@ class DataImporter:
         
         
 
-    def get_CF(self, indicators=(), activities=(), show=False, file=''):
+    def get_CF(self, indicators=(), activities=(), show=False, path=''):
         '''
         Get impact characterization factors.
         
@@ -255,7 +264,7 @@ class DataImporter:
             Will be defaulted to all loaded indicators if not provided.
         show : bool
             Whether to print all characterization factors in the console.
-        file : str
+        path : str
             If provided, the :class:`pandas.DataFrame` will be saved to the given file path.
         
         Returns
@@ -263,8 +272,8 @@ class DataImporter:
         [:class:`pandas.DataFrame`]
             Characterization factors.
         
-        Tips
-        ----
+        Tip
+        ---
         [1] Use ``show_activity`` to see the functional unit of the activity.
         The quantity will be 1.
         
@@ -292,14 +301,25 @@ class DataImporter:
         sys.stdout = open(os.devnull, 'w')
         mlca = bw2.MultiLCA('multiLCA')
         sys.stdout = stdout
-        
+
         pd_indices = [a['name'] for a in acts]
         pd_cols = pd.MultiIndex.from_tuples(inds, names=('method', 'category', 'indicator'))        
         df = pd.DataFrame(data=mlca.results, index=pd_indices, columns=pd_cols)
+        df[('-', '-', 'functional unit')] = [a['unit'] for a in acts]
         df.sort_index(axis=1, inplace=True)
 
         if show:
             print(df)
+
+        if path:
+            if path.endswith('.csv'):
+                df.to_csv(path)
+            elif (path.endswith('.xlsx') or path.endswith('.xls')):
+                df.to_excel(path)
+            else:
+                extension = path.split('.')[-1]
+                raise ValueError('Only "csv", "xlsx", or "xls" files are supported, ' \
+                                 f'not {extension}.')
 
         return df
 
