@@ -24,7 +24,7 @@ setup(
     description='Bridging Brightway2 and QSD packages for LCA',
     long_description=open('README.rst').read(),
     url="https://github.com/QSD-Group/BW2QSD",
-    install_requires=['brightway2', 'eidl', ],
+    install_requires=['brightway2>=2.3', ],
     package_data=
         {'bw2qsd': [
 #                    'data/*',
