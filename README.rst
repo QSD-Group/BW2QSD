@@ -42,7 +42,7 @@ To get the git version (use the depth flag to choose how many commit histories y
 
 Tutorial
 --------
-Please refer to the `quick tutorial <https://github.com/QSD-Group/BW2QSD/blob/main/bw2qsd/Tutorial.ipynb>`_ on GitHub for how to get started.
+Please refer to the `tutorial <https://github.com/QSD-Group/BW2QSD/blob/main/bw2qsd/Tutorial.ipynb>`_ on GitHub for how to get started.
 
 
 Author and Contributing
