@@ -1,6 +1,6 @@
-========================================================
-BW2QSD: Bridging ``Brightway2`` and QSD packages for LCA
-========================================================
+====================================================
+BW2QSD: Bridging Brightway2 and QSD packages for LCA
+====================================================
 
 .. image:: https://img.shields.io/pypi/l/exposan?color=blue&logo=UIUC&style=flat
    :target: https://github.com/QSD-Group/BW2QSD/blob/master/LICENSE.txt
