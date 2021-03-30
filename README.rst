@@ -17,6 +17,13 @@ What is ``BW2QSD``?
 
 Installation
 ------------
+``BW2QSD`` requires `eidl (EcoInventDownLoader) <https://github.com/haasad/EcoInventDownLoader>`_, which is not available on PyPI. You need to firstly install ``eidl`` through conda. Detailed explanation can be found in the `tutorial <https://github.com/QSD-Group/BW2QSD/blob/main/bw2qsd/tutorial.ipynb>`_, but TL;DR:
+
+.. code:: bash
+
+    conda install -c defaults -c conda-forge -c cmutel -c haasad eidl
+
+
 The package can be downloaded from `PyPI <https://pypi.org/project/bw2qsd/>`_.
 
 If you use pip:
@@ -35,7 +42,7 @@ To get the git version (use the depth flag to choose how many commit histories y
 
 Tutorial
 --------
-Please refer to the jupyter notebook within the package for how to get started.
+Please refer to the `quick tutorial <https://github.com/QSD-Group/BW2QSD/blob/main/bw2qsd/tutorial.ipynb>`_ on GitHub for how to get started.
 
 
 Author and Contributing

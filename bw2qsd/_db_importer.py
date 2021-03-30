@@ -292,6 +292,7 @@ class DataImporter:
             raise ValueError('Provided indicator(s) not all loaded.')
         
         inds = indicators if indicators else self.indicators
+        ind_units = ['-'] + [bw2.methods.get(i)['unit'] for i in inds]
         acts = [self.activities[k] for k in activities] if activities \
             else [v for v in self.activities.values()]
         
@@ -304,21 +305,28 @@ class DataImporter:
 
         pd_indices = [a['name'] for a in acts]
         pd_cols = pd.MultiIndex.from_tuples(inds, names=('method', 'category', 'indicator'))        
-        df = pd.DataFrame(data=mlca.results, index=pd_indices, columns=pd_cols)
-        df[('-', '-', 'functional unit')] = [a['unit'] for a in acts]
-        df.sort_index(axis=1, inplace=True)
+        cf_df = pd.DataFrame(data=mlca.results, index=pd_indices, columns=pd_cols)
+        cf_df[('-', '-', 'activity functional unit')] = [a['unit'] for a in acts]
+        cf_df.sort_index(axis=1, inplace=True)
 
+        unit_df = pd.DataFrame(data={k: v for k, v in zip(cf_df.columns, ind_units)},
+                               index=['indicator unit'])
+
+        df = pd.concat((unit_df, cf_df))
+        
         if show:
             print(df)
 
         if path:
-            if path.endswith('.csv'):
+            if path.endswith('.tsv'):
+                df.to_csv(path, sep='\t')
+            elif path.endswith('.csv'):
                 df.to_csv(path)
             elif (path.endswith('.xlsx') or path.endswith('.xls')):
                 df.to_excel(path)
             else:
                 extension = path.split('.')[-1]
-                raise ValueError('Only "csv", "xlsx", or "xls" files are supported, ' \
+                raise ValueError('Only "tsv", "csv", "xlsx", or "xls" files are supported, ' \
                                  f'not {extension}.')
 
         return df

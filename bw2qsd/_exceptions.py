@@ -12,5 +12,7 @@ Please refer to https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
 for license details.
 '''
 
+__all__ = ('BW2Error', )
+
 class BW2Error(Exception):
     '''Errors related to Brightway2 packages.'''
