@@ -15,44 +15,50 @@ Please refer to https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
 for license details.
 '''
 
-import os, appdirs, tempfile, subprocess, requests
+import os, appdirs, subprocess, requests, functools
 import brightway2 as bw2
 import eidl
 from zipfile import ZipFile
 from bw2io import importers, strategies
 
-import zipfile
-from bw2data.utils import download_file
-
 '''
 TODO:
-    Add forwast, USLCI, etc.
+    JSON conversion
+    Add USLCI, etc.
 '''
 
+
 __all__ = ('DataDownloader',)
+
+
+def _check_dir(path, end_dir=''):
+    if not path:
+        path = fp = appdirs.user_data_dir(appname='BW2QSD', appauthor='bw2qsd')
+        if not os.path.isdir(fp):
+            os.makedirs(fp)
+            print (f'\nDirectory {fp} created for storing database.\n')
+
+    full_path = os.path.join(path, end_dir) if end_dir else path
+    if not os.path.isdir(full_path):
+        os.makedirs(full_path)
+        print (f'\nDirectory {full_path} created for storing database.\n')
+
+    return full_path
+
+
 
 class DataDownloader:
     '''
     To download databases from external sources.
     
     Currently support:
-        `ecoinvent <https://www.ecoinvent.org/>`_, version 3+, (license and login credentials required)
-        `forwarst <https://lca-net.com/projects/show/forwast/>`_ (NOT YET READY)
-        `USLCI <>`_ (NOT YET READY)
+        - `ecoinvent <https://www.ecoinvent.org/>`_, version 3+, (license and login credentials required)
+        - `FORWAST <https://lca-net.com/projects/show/forwast/>`_
+        - `USLCI <>`_ (NOT YET READY)
     
     '''
-
-    # Parameters
-    # ----------
-    # path : str
-    #     Path for database storage, a new directory "database" will be created under the given path,
-    #     default to current working directory.
-    
-    # def __init__(self, path=''):
-    #     path = path if path else os.path.abspath(os.path.dirname(__file__))
-    #     self._db_path = os.path.join(path, 'database')
         
-    def download_ecoinvent(self, path='', store_download=True):
+    def download_ecoinvent(self, path='', remove_download=False):
         '''
         Download ecoinvent database using the ``eidl`` package.
         You will be prompted to enter ecoinvent license and login credentials.
@@ -60,14 +66,19 @@ class DataDownloader:
         The original package ``eidl`` has compatibility issues with some operating systems,
         e.g., :func:`eidl.get_ecoinvent` may not work, this function fixes the bugs.
         
+        .. note::
+            
+            The entire process may take 10-20 min.
+        
+        
         Parameters
         ----------
         path : str
-            Path for for storing the ecoinvent database (if store_download is True).
+            Path for for storing the ecoinvent database.
             Will use the user data storage directory (based on :func:`appdirs.user_data_dir`)
             if not provided.
-        store_download : bool
-            Whether to store the downloaded file.
+        remove_download : bool
+            Whether to remove the downloaded zipfile.
         
         Tip
         ---
@@ -94,70 +105,143 @@ class DataDownloader:
         
         
         '''
-        fp = appdirs.user_data_dir(appname='BW2QSD', appauthor='bw2qsd')
-        if not os.path.isdir(fp):
-            os.makedirs(fp)
-            print (f'\nDirectory {fp} created for ecoinvent database.\n')
-
-        with tempfile.TemporaryDirectory() as td:
-            if not path:
-                if store_download:
-                    download_path = fp
-                else:
-                    download_path = td
+        path = _check_dir(path, 'ecoinvent')
             
+        downloader = eidl.EcoinventDownloader(outdir=path)
+        downloader.run()
+
+        print('\nUnzipping data...\n')
+        
+        db_append = downloader.file_name.replace('.7z', '')
+        
+        extracted_path = os.path.join(path, db_append)
+        extract_cmd = ['7za', 'x', path, f'-o{extracted_path}']
+        # # do not use downloader.extract, it may not work on Mac app 
+        # downloader.extract(target_dir=path)
+        
+        self.extraction_process = subprocess.Popen(extract_cmd)
+        self.extraction_process.wait()
+
+        db_name = 'ecoinvent_' + db_append
+        datasets_path = os.path.join(extracted_path, 'datasets') 
+                
+        ecospold_import = importers.SingleOutputEcospold2Importer(datasets_path, db_name)
+        ecospold_import.apply_strategies()
+        
+        print('\nInspecting data...\n')
+        self.inspect(ecospold_import, db_name)
+                
+        print(f'\nSuccessfully imported ecoinvent database as "ecoinvent_{db_append}".\n')
+        
+        if remove_download:
+            os.remove(os.path.join(path, downloader.file_name))
+
+        return db_name
+
+    def download_forwast(self, path='',
+                         url='http://lca-net.com/wp-content/uploads/forwast.bw2package.zip',
+                         remove_download=False):
+        '''
+        Download the FORWAST database.
+        
+        Parameters
+        ----------
+        path : str
+            Path for for storing the ecoinvent database (if store_download is True).
+            Will use the user data storage directory (based on :func:`appdirs.user_data_dir`)
+            if not provided.
+        url : str
+            FORWAST database downloading url.
+            You may need to update the url according to the FORWAST website
+            if the default one is not working.       
+        remove_download : bool
+            Whether to remove the downloaded zipfile.
+        
+        See Also
+        --------
+        The `FORWARST project <https://lca-net.com/projects/show/forwast/>`_.
+        
+        '''
+        path = _check_dir(path, 'forwast')
+        # filename = 'forwast.package.zip'
+        fp = os.path.join(path, 'forwast.package.zip')
+        
+        if os.path.exists(fp):
+            print('Using previously downloaded FORWAST package in directory ' \
+                  f'"{path}".')
+
+        else:
             print('\nDownloading data...\n')
-            downloader = eidl.EcoinventDownloader(outdir=download_path)
-            downloader.run()
-
-            print('\nUnzipping data...\n')
-            out_path= downloader.out_path
-            extract_cmd = ['7za', 'x', out_path, f'-o{download_path}']
-            # # do not use downloader.extract, it may not work on Mac app 
-            # downloader.extract(target_dir=download_path)
-            
-            try:
-                self.extraction_process = subprocess.Popen(extract_cmd)
-                self.extraction_process.wait() 
-            except FileNotFoundError as e:
-                print (e)
-                pass
+            r = requests.get(url, stream=True)
+            if r.status_code != 200:
+                raise (f'URL "{url}" returns status code "{r.status_code}".')
            
-            db_append = downloader.file_name.replace('.7z', '')
-            db_name = 'ecoinvent_' + db_append
-            datasets_path = os.path.join(download_path, 'datasets')
-            ecospold_import = importers.SingleOutputEcospold2Importer(datasets_path, db_name)
-            # try:
-            #     ecospold_import = importers.SingleOutputEcospold2Importer(datasets_path, db_name)
-            # except ImportError as import_err:
-            #     print (import_err)
+            # From BioSTEAM-LCA:
+            # use the following code instead of ``r.raw.read`` to save what is being streamed to a file.
+            # with open(filename, 'wb') as fd:
+            with open(fp, 'wb') as fd:
+                for chunk in r.iter_content(chunk_size=128): # chunk = 128 * 1024
+                    fd.write(chunk)
+        
+        print('\nExtracting data...\n')
+        sp = ZipFile(fp).extractall(path)         
+        bw2.BW2Package.import_file(os.path.join(path, 'forwast.bw2package'))
+    
+        print('\nSuccessfully imported FORWAST database as "forwast".\n')    
+
+        return sp
+
+
+
+    def download_USLCI(self, db_path):
+        '''
+        NOT READY YET
+        
+        
+        Import the pre-downloaded and pre-converted (from JSON to ecoSpold1 or ecoSpold2)
+        U.S. Life Cycle Inventory (USLCI) database from
+        `Federal LCA Commons repository <https://www.lcacommons.gov/lca-collaboration/>`.
+        
+        .. note::
             
-            ecospold_import.apply_strategies()
+            The files in the `Federal LCA Commons repository <https://www.lcacommons.gov/lca-collaboration/>`
+            are in JSON file, and need to be converted to ecoSpold1 (`outdated <https://www.ecoinvent.org/data-provider/data-provider-toolkit/ecospold2/changes-from-ecospold1-to-ecospold2/changes-from-ecospold1-to-ecospold2.html>`_)
+            or ecoSpold2 before using.
             
-            print ('\nInspecting data...\n')
-            self.inspect(ecospold_import, db_name)
-                    
-            print (f'\nSuccessfully imported ecoinvent database version {db_append}.\n')
-
-            return db_name
-
-    def download_forwast(self):
+        Parameters
+        ----------
+        db_path : str
+            Directory to the sown
+        
+        
         '''
-        NOT  YET READY
-        '''
-    # def _import_forwast(self):
-    #     filepath = download_file("forwast.bw2package.zip", url="http://lca-net.com/wp-content/uploads/")
-    #     dirpath = os.path.dirname(filepath)
-    #     zipfile.ZipFile(filepath).extractall(dirpath)
-    #     bw2.BW2Package.import_file(os.path.join(dirpath, "forwast.bw2package"))
+        db_name = 'us_lci'
+        
+        
+        from warnings import warn
+        warn('This function is not ready yet.')
+        return
+    
+        #!!! Look into brightway2 for direct importing from JSON
+    
+        lci_import = importers.SingleOutputEcospold2Importer(
+            os.path.join(self.dirpath, 'US_LCI'), db_name)
+        lci_import.apply_strategies()
+        
+        lci_import.migrate('unusual-units')
+        lci_import.migrate('default-units')
+        
+        # Link the biosphere flows by their names, units, and categories
+        link_iter = functools.partial(strategies.link_iterable_by_fields, 
+                                      other= bw2.Database(bw2.config.biosphere),
+                                      kind='biosphere')
+        lci_import.apply_strategy(link_iter)
+        
+        print('\nInspecting data...\n')        
+        self.inspect(lci_import, db_name)
 
-
-
-    def download_USLCI(self):
-        '''
-        NOT  YET READY
-        '''
-
+        sp = lci_import
+        return sp
 
 
     @staticmethod

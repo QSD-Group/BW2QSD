@@ -12,6 +12,17 @@ Please refer to https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
 for license details.
 '''
 
+'''
+TODO:
+    Improve search ability, update docs
+
+'''
+
+
+
+
+
+
 import sys, os
 import pandas as pd
 import brightway2 as bw2
