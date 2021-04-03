@@ -1,7 +1,7 @@
 	-	TRACI (obsolete)	TRACI (obsolete)	TRACI (obsolete)	TRACI (obsolete)	TRACI (obsolete)	TRACI (obsolete)	TRACI (obsolete)	TRACI (obsolete)	TRACI (obsolete)
 	-	environmental impact	environmental impact	environmental impact	environmental impact	environmental impact	environmental impact	human health	human health	human health
 	activity functional unit	acidification	ecotoxicity	eutrophication	global warming	ozone depletion	photochemical oxidation	carcinogenics	non-carcinogenics	respiratory effects, average
-indicator unit	-	kg benzen.	kg N	kg toluen.	kg CO2-Eq	kg PM2.5-.	moles of .	kg NOx-Eq	kg CFC-11.	kg 2,4-D-.
+indicator unit	-	moles of .	kg 2,4-D-.	kg N	kg CO2-Eq	kg CFC-11.	kg NOx-Eq	kg benzen.	kg toluen.	kg PM2.5-.
 building construction, hostel	unit	130902.41290275723	435341.3623276647	179.6016044184749	500375.7399459876	0.028480577663396407	2060.8104577235204	2922.489474512912	14857748.855492106	885.1844734469087
 building operation, hostel	guest night	1.5183964183250143	27.07956760258907	0.005998297282781855	6.608624311961709	2.1194086103301317e-07	0.015793547513353844	0.045757487228807125	681.2441569170276	0.010174910129644376
 building construction, budget hotel	unit	352030.86620241846	2395957.3710911265	535.7266407421758	1316242.5639377611	0.11694383123195654	5510.085067767858	2143.644084127436	24527873.859152667	1932.612651944206

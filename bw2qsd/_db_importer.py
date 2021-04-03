@@ -234,20 +234,6 @@ class DataImporter:
             raise ValueError('kind can only be "indicator" or "activity", ' \
                              f'not "{kind}".')
         
-    def add_alias(self, kind, alias_dct):
-        '''
-        Add alternative names for loaded indicators or activities.
-        
-        Parameters
-        ----------
-        kind : str
-            Can be "indicator" or "activity".
-        alias_dct : dict    
-            Keys should be the entries in the `indicators` attribute or the
-            keys of the `activities` attribute, values should be the aliases.
-            
-        '''
-        
         
 
     def get_CF(self, indicators=(), activities=(), show=False, path=''):
@@ -292,12 +278,13 @@ class DataImporter:
             raise ValueError('Provided indicator(s) not all loaded.')
         
         inds = indicators if indicators else self.indicators
-        ind_units = ['-'] + [bw2.methods.get(i)['unit'] for i in inds]
+        ind_units = [bw2.methods.get(i)['unit'] for i in inds] + ['-']
         acts = [self.activities[k] for k in activities] if activities \
             else [v for v in self.activities.values()]
         
         bw2.calculation_setups['multiLCA'] = {'inv': [{a:1} for a in acts],
                                               'ia': inds}
+        # This is to prevent bw2 from printing in the console
         stdout = sys.stdout
         sys.stdout = open(os.devnull, 'w')
         mlca = bw2.MultiLCA('multiLCA')
@@ -307,12 +294,12 @@ class DataImporter:
         pd_cols = pd.MultiIndex.from_tuples(inds, names=('method', 'category', 'indicator'))        
         cf_df = pd.DataFrame(data=mlca.results, index=pd_indices, columns=pd_cols)
         cf_df[('-', '-', 'activity functional unit')] = [a['unit'] for a in acts]
-        cf_df.sort_index(axis=1, inplace=True)
 
         unit_df = pd.DataFrame(data={k: v for k, v in zip(cf_df.columns, ind_units)},
                                index=['indicator unit'])
 
         df = pd.concat((unit_df, cf_df))
+        df.sort_index(axis=1, inplace=True)
         
         if show:
             print(df)
