@@ -17,7 +17,7 @@ from setuptools import setup
 setup(
     name='bw2qsd',
     packages=['bw2qsd'],
-    version='0.0.5',
+    version='0.0.6',
     license='UIUC',
     author='Yalin Li',
     author_email='zoe.yalin.li@gmail.com',
@@ -27,12 +27,9 @@ setup(
     install_requires=['eidl', ],
     package_data=
         {'bw2qsd': [
-#                    'data/*',
+                    'sample_output.tsv',
+                    'Tutorial.ipynb',
 #                    'data/sanunit_data/*',
-#                    'sanunits/*',
-#                    'units_of_measure.txt',
-#                    'utils/*',
-#                    'systems/bwaise/*'
                     ]},
     platforms=['Windows', 'Mac', 'Linux'],
     classifiers=['License :: OSI Approved :: University of Illinois/NCSA Open Source License',
