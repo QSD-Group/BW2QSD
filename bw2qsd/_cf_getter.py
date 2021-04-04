@@ -19,10 +19,6 @@ TODO:
 '''
 
 
-
-
-
-
 import sys, os
 import pandas as pd
 import brightway2 as bw2
@@ -30,11 +26,11 @@ from bw2data.backends.peewee import Activity
 
 isinstance = isinstance
 
-__all__ = ('DataImporter',)
+__all__ = ('CFgetter',)
 
-class DataImporter:
+class CFgetter:
     '''
-    To import environmental impact characterization factors from databases through
+    To get environmental impact characterization factors from databases through
     ``Brightway2``, users can choose different life cycle inventory (LCI) databases
     and life cycle impact assessment (LCIA).
     
@@ -96,7 +92,7 @@ class DataImporter:
         Parameters
         ----------
         add : bool
-            Whether to add the indicators for data importing.
+            Whether to include the indicators in impact assessment for characterization factors.
             If False, a dict of the indicators that satisfy the search criteria
             will be returned.
         method: str
@@ -138,7 +134,7 @@ class DataImporter:
         string : str
             Search string.
         add : bool
-            Whether to add the activities for data importing.
+            Whether to include the activities in impact assessment for characterization factors.
             If False, a dict of the activities that satisfy the search criteria
             will be returned.
         limit : int
@@ -153,6 +149,13 @@ class DataImporter:
         :func:`search` in `Brightway2-data SQLiteBackend <https://2.docs.brightway.dev/technical/bw2data.html#default-backend-databases-stored-in-a-sqlite-database>`_
 
         '''
+        
+        #!!!! PAUSED! NEED TO IMPROVE SEARCH ABILITY
+        
+        
+        
+        
+        
 
         activities = self.database.search(string, limit=limit, **kwargs)
         act_dct = {act.as_dict()['name']: act for act in activities}

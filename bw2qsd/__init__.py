@@ -40,7 +40,7 @@ except Exception as e:
         print('Would you like to automatically remove the file? ' \
               'If yes, the file will be permanently removed ' \
               '(i.e., cannot be recovered from Trash or Recycle Bin).')
-        if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
+        if input('[y]/[n]: ') in ('y', 'Y', 'yes', 'Yes', 'YES'):
              path = msg.split("'")[-2]
              if not 'setups.pickle' in path:
                  print('\nError in parsing directory, for cautious purpose, ' \
@@ -81,17 +81,17 @@ def remove_setups_pickle():
              stacklevel=2)
 
 from ._db_downloader import *
-from ._db_importer import *
+from ._cf_getter import *
 
 from . import (
     _exceptions,
     _db_downloader,
-    _db_importer,    
+    _cf_getter,    
     )
 
 __all__ = (
     *_db_downloader.__all__,
-    *_db_importer.__all__,
+    *_cf_getter.__all__,
     'remove_setup_pickle',
     )
 

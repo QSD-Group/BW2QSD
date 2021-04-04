@@ -15,7 +15,7 @@ Please refer to https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
 for license details.
 '''
 
-import os, appdirs, subprocess, requests, functools
+import os, appdirs, subprocess, shutil, requests, functools
 import brightway2 as bw2
 import eidl
 from zipfile import ZipFile
@@ -31,7 +31,22 @@ TODO:
 __all__ = ('DataDownloader',)
 
 
-def _check_dir(path, end_dir=''):
+def _check_db(name):
+    dbs = []
+    for k in bw2.databases.keys():
+        if name.lower() in k:
+            dbs.append(k)
+    
+    if dbs:
+        print(f'The following {name} database(s) {dbs} exist(s), ' \
+              'do you want to continue downloading?')
+        if input('[y]/[n]: ') in ('n', 'N', 'no', 'No', 'NO'):
+             return False
+    
+    return True
+
+
+def _make_dir(path, end_dir=''):
     if not path:
         path = fp = appdirs.user_data_dir(appname='BW2QSD', appauthor='bw2qsd')
         if not os.path.isdir(fp):
@@ -58,7 +73,8 @@ class DataDownloader:
     
     '''
         
-    def download_ecoinvent(self, path='', remove_download=False):
+    def download_ecoinvent(self, path='', remove_download=False,
+                           remove_cache_data=False):
         '''
         Download ecoinvent database using the ``eidl`` package.
         You will be prompted to enter ecoinvent license and login credentials.
@@ -78,7 +94,10 @@ class DataDownloader:
             Will use the user data storage directory (based on :func:`appdirs.user_data_dir`)
             if not provided.
         remove_download : bool
-            Whether to remove the downloaded zipfile.
+            Whether to remove the downloaded zipfile after extracting.
+        remove_cache_data : bool
+            Whether to remove the raw database (i.e., unzipped zipfile)
+            after importing.
         
         Tip
         ---
@@ -105,9 +124,11 @@ class DataDownloader:
         
         
         '''
-        path = _check_dir(path, 'ecoinvent')
-            
-        downloader = eidl.EcoinventDownloader(outdir=path)
+        if not _check_db('ecoinvent'):
+            return
+
+        path = _make_dir(path, 'ecoinvent')
+        downloader = eidl.EcoinventDownloader()
         downloader.run()
 
         print('\nUnzipping data...\n')
@@ -115,7 +136,12 @@ class DataDownloader:
         db_append = downloader.file_name.replace('.7z', '')
         
         extracted_path = os.path.join(path, db_append)
-        extract_cmd = ['7za', 'x', path, f'-o{extracted_path}']
+        try: # remove previous extracted cache
+            os.rmdir(extracted_path)
+        except:
+            breakpoint()
+        
+        extract_cmd = ['7za', 'x', downloader.out_path, f'-o{extracted_path}']
         # # do not use downloader.extract, it may not work on Mac app 
         # downloader.extract(target_dir=path)
         
@@ -133,14 +159,22 @@ class DataDownloader:
                 
         print(f'\nSuccessfully imported ecoinvent database as "ecoinvent_{db_append}".\n')
         
+        breakpoint()
         if remove_download:
-            os.remove(os.path.join(path, downloader.file_name))
+            os.remove(downloader.out_path)
+
+        if remove_cache_data:
+            shutil.remove(extracted_path)
+            try:
+                os.rmdir(path)
+            except:
+                breakpoint()
 
         return db_name
 
     def download_forwast(self, path='',
                          url='http://lca-net.com/wp-content/uploads/forwast.bw2package.zip',
-                         remove_download=False):
+                         remove_download=False, remove_cache_data=False):
         '''
         Download the FORWAST database.
         
@@ -155,37 +189,55 @@ class DataDownloader:
             You may need to update the url according to the FORWAST website
             if the default one is not working.       
         remove_download : bool
-            Whether to remove the downloaded zipfile.
+            Whether to remove the downloaded zipfile after extracting.
+        remove_cache_data : bool
+            Whether to remove the raw database (i.e., unzipped zipfile)
+            after importing.
         
         See Also
         --------
         The `FORWARST project <https://lca-net.com/projects/show/forwast/>`_.
         
         '''
-        path = _check_dir(path, 'forwast')
-        # filename = 'forwast.package.zip'
-        fp = os.path.join(path, 'forwast.package.zip')
+        if not _check_db('FORWAST'):
+            return
         
-        if os.path.exists(fp):
-            print('Using previously downloaded FORWAST package in directory ' \
+        path = _make_dir(path, 'forwast')
+        
+        fp_extracted = os.path.join(path, 'forwast.bw2package')
+        if os.path.exists(fp_extracted):
+            print('Using previously extracted FORWAST package in directory ' \
                   f'"{path}".')
-
-        else:
-            print('\nDownloading data...\n')
-            r = requests.get(url, stream=True)
-            if r.status_code != 200:
-                raise (f'URL "{url}" returns status code "{r.status_code}".')
-           
-            # From BioSTEAM-LCA:
-            # use the following code instead of ``r.raw.read`` to save what is being streamed to a file.
-            # with open(filename, 'wb') as fd:
-            with open(fp, 'wb') as fd:
-                for chunk in r.iter_content(chunk_size=128): # chunk = 128 * 1024
-                    fd.write(chunk)
         
-        print('\nExtracting data...\n')
-        sp = ZipFile(fp).extractall(path)         
+        else:
+            fp = os.path.join(path, 'forwast.package.zip')
+            if os.path.exists(fp):
+                print('Using previously downloaded FORWAST package in directory ' \
+                      f'"{path}".')
+    
+            else:
+                print('\nDownloading data...\n')
+                r = requests.get(url, stream=True)
+                if r.status_code != 200:
+                    raise (f'URL "{url}" returns status code "{r.status_code}".')
+               
+                # From BioSTEAM-LCA:
+                # use the following code instead of ``r.raw.read`` to save what is being streamed to a file.
+                # with open(filename, 'wb') as fd:
+                with open(fp, 'wb') as fd:
+                    for chunk in r.iter_content(chunk_size=128): # chunk = 128 * 1024
+                        fd.write(chunk)
+            
+            print('\nExtracting data...\n')
+            sp = ZipFile(fp).extractall(path)         
         bw2.BW2Package.import_file(os.path.join(path, 'forwast.bw2package'))
+        
+        breakpoint()
+        if remove_download:
+            os.remove(fp)
+
+        if remove_cache_data:
+            shutil.remove(path)
     
         print('\nSuccessfully imported FORWAST database as "forwast".\n')    
 
