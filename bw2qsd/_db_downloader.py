@@ -31,17 +31,21 @@ TODO:
 __all__ = ('DataDownloader',)
 
 
-def _check_db(name):
+def _check_db(name, force_skipping=False):
     dbs = []
     for k in bw2.databases.keys():
         if name.lower() in k:
             dbs.append(k)
     
     if dbs:
-        print(f'The following {name} database(s) {dbs} exist(s), ' \
-              'do you want to continue downloading?')
-        if input('[y]/[n]: ') in ('n', 'N', 'no', 'No', 'NO'):
-             return False
+        print(f'\nThe following {name} database(s) {dbs} exist(s).')
+
+        if force_skipping:
+            return False
+        else:
+            print(f'\nWould you like to download a different version of {name}?')
+            if input('[y]/[n]: ') in ('n', 'N', 'no', 'No', 'NO'):
+                return False
     
     return True
 
@@ -51,12 +55,12 @@ def _make_dir(path, end_dir=''):
         path = fp = appdirs.user_data_dir(appname='BW2QSD', appauthor='bw2qsd')
         if not os.path.isdir(fp):
             os.makedirs(fp)
-            print (f'\nDirectory {fp} created for storing database.\n')
+            print (f'\nDirectory {fp} created for storing database.')
 
     full_path = os.path.join(path, end_dir) if end_dir else path
     if not os.path.isdir(full_path):
         os.makedirs(full_path)
-        print (f'\nDirectory {full_path} created for storing database.\n')
+        print (f'\nDirectory {full_path} created for storing database.')
 
     return full_path
 
@@ -90,13 +94,20 @@ class DataDownloader:
         Parameters
         ----------
         path : str
-            Path for for storing the ecoinvent database.
+            Path for for storing the extracted raw database file.
             Will use the user data storage directory (based on :func:`appdirs.user_data_dir`)
             if not provided.
+            
+            .. note::
+            
+                Downloaded files are stored under the "EcoInventDownLoader" directory
+                in the user data storage directory.
+
+
         remove_download : bool
             Whether to remove the downloaded zipfile after extracting.
         remove_cache_data : bool
-            Whether to remove the raw database (i.e., unzipped zipfile)
+            Whether to remove the raw database files (i.e., unzipped zipfile)
             after importing.
         
         Tip
@@ -131,15 +142,15 @@ class DataDownloader:
         downloader = eidl.EcoinventDownloader()
         downloader.run()
 
-        print('\nUnzipping data...\n')
+        print('\nUnzipping data...')
         
         db_append = downloader.file_name.replace('.7z', '')
         
         extracted_path = os.path.join(path, db_append)
         try: # remove previous extracted cache
             os.rmdir(extracted_path)
-        except:
-            breakpoint()
+        except FileNotFoundError:
+            pass
         
         extract_cmd = ['7za', 'x', downloader.out_path, f'-o{extracted_path}']
         # # do not use downloader.extract, it may not work on Mac app 
@@ -154,23 +165,21 @@ class DataDownloader:
         ecospold_import = importers.SingleOutputEcospold2Importer(datasets_path, db_name)
         ecospold_import.apply_strategies()
         
-        print('\nInspecting data...\n')
+        print('\nInspecting data...')
         self.inspect(ecospold_import, db_name)
-                
-        print(f'\nSuccessfully imported ecoinvent database as "ecoinvent_{db_append}".\n')
         
-        breakpoint()
         if remove_download:
             os.remove(downloader.out_path)
 
         if remove_cache_data:
-            shutil.remove(extracted_path)
+            shutil.rmtree(extracted_path)
             try:
                 os.rmdir(path)
-            except:
-                breakpoint()
+            except OSError:
+                pass
+                
+        print(f'\nSuccessfully imported ecoinvent database as "ecoinvent_{db_append}".')
 
-        return db_name
 
     def download_forwast(self, path='',
                          url='http://lca-net.com/wp-content/uploads/forwast.bw2package.zip',
@@ -181,7 +190,7 @@ class DataDownloader:
         Parameters
         ----------
         path : str
-            Path for for storing the ecoinvent database (if store_download is True).
+            Path for for storing the downloaded and extracted raw database file.
             Will use the user data storage directory (based on :func:`appdirs.user_data_dir`)
             if not provided.
         url : str
@@ -191,7 +200,7 @@ class DataDownloader:
         remove_download : bool
             Whether to remove the downloaded zipfile after extracting.
         remove_cache_data : bool
-            Whether to remove the raw database (i.e., unzipped zipfile)
+            Whether to remove the raw database files (i.e., unzipped zipfile)
             after importing.
         
         See Also
@@ -199,20 +208,19 @@ class DataDownloader:
         The `FORWARST project <https://lca-net.com/projects/show/forwast/>`_.
         
         '''
-        if not _check_db('FORWAST'):
+        if not _check_db('FORWAST', True):
             return
         
         path = _make_dir(path, 'forwast')
-        
+        fp = os.path.join(path, 'forwast.package.zip')
         fp_extracted = os.path.join(path, 'forwast.bw2package')
         if os.path.exists(fp_extracted):
-            print('Using previously extracted FORWAST package in directory ' \
+            print('\nUsing previously extracted FORWAST package in directory ' \
                   f'"{path}".')
         
-        else:
-            fp = os.path.join(path, 'forwast.package.zip')
+        else:            
             if os.path.exists(fp):
-                print('Using previously downloaded FORWAST package in directory ' \
+                print('\nUsing previously downloaded FORWAST package in directory ' \
                       f'"{path}".')
     
             else:
@@ -228,20 +236,17 @@ class DataDownloader:
                     for chunk in r.iter_content(chunk_size=128): # chunk = 128 * 1024
                         fd.write(chunk)
             
-            print('\nExtracting data...\n')
-            sp = ZipFile(fp).extractall(path)         
+            print('\nExtracting data...')
+            ZipFile(fp).extractall(path)         
         bw2.BW2Package.import_file(os.path.join(path, 'forwast.bw2package'))
         
-        breakpoint()
         if remove_download:
             os.remove(fp)
 
         if remove_cache_data:
-            shutil.remove(path)
+            shutil.rmtree(path)
     
-        print('\nSuccessfully imported FORWAST database as "forwast".\n')    
-
-        return sp
+        print('\nSuccessfully imported FORWAST database as "forwast".')
 
 
 
@@ -292,8 +297,7 @@ class DataDownloader:
         print('\nInspecting data...\n')        
         self.inspect(lci_import, db_name)
 
-        sp = lci_import
-        return sp
+        print('\nSuccessfully imported U.S. Life Cycle Inventory database as "us_lci".')
 
 
     @staticmethod
@@ -325,27 +329,27 @@ class DataDownloader:
         if not unlinked:
             sp.write_database()
         else:
-            print(f'There are {unlinked} unlinked exchanges, would you like to show all unlinked exchanges?')
+            print(f'\nThere are {unlinked} unlinked exchanges, would you like to show all unlinked exchanges?')
             if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
                  for x in sp.unlinked:
                      print(x)
 
-            print(f'Continue to write database {db_name}?')            
+            print(f'\nContinue to write database {db_name}?')            
             if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
                 print ('Deleting exchanges with zero amount...')
                 for ds in sp.data:
                     ds['exchanges'] = [exc for exc in ds['exchanges'] if (exc['amount'] or exc['uncertainty type'] != 0)]
                 
-                print ('Drop unlinked exchanges?')
+                print ('\nDrop unlinked exchanges?')
                 if input('[y]/[n]: ') in ('y', 'yes', 'Y', 'Yes', 'YES'):
                     try:
                         sp.apply_strategies([strategies.generic.drop_unlinked])  #sp.drop_unlinked(i_am_reckless=True)
                         sp.statistics()
                         sp.write_database()
                     except:
-                        print ('Dropping unlinked exchanges failed')
+                        print ('\nDropping unlinked exchanges failed')
             else:
-                raise Warning ('Stopped writing to backend SQLite3 database')      
+                raise Warning ('\nStopped writing to backend SQLite3 database')      
         return datasets, exchanges
 
 
