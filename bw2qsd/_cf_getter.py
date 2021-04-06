@@ -22,11 +22,35 @@ TODO:
 import sys, os
 import pandas as pd
 import brightway2 as bw2
+from collections.abc import Iterable
 from bw2data.backends.peewee import Activity
+from .utils import export_df, format_name
 
 isinstance = isinstance
 
 __all__ = ('CFgetter',)
+
+
+    
+def _filter_inds(inds, cats, include):
+    for n, cat in enumerate(cats):
+        if cat:
+            if isinstance(cat, str):
+                cat = (cat, )
+            elif not isinstance(cat, Iterable):
+                raise TypeError(f'"{cat}" can only be str or iterable, ' \
+                                f'not {type(cat).__name__}.')
+            if include is True:
+                for string in cat:
+                    string_lower = string.lower()
+                    inds = [ind for ind in inds if string_lower in ind[n].lower()]
+            else:                
+                for string in cat:
+                    string_lower = string.lower()
+                    inds = [ind for ind in inds if not string_lower in ind[n].lower()]
+                
+    return inds
+
 
 class CFgetter:
     '''
@@ -84,8 +108,10 @@ class CFgetter:
 
         print(f'Database {db} with {len(db)} inventories has been loaded.')
 
-        
-    def load_indicators(self, add: bool, method='', category='', indicator=''):
+
+    def load_indicators(self, add=False, method='', method_exclude='',
+                        category='', category_exclude='',
+                        indicator='', indicator_exclude=''):
         '''
         Select and/or load designated impact indicators.
         
@@ -95,30 +121,67 @@ class CFgetter:
             Whether to include the indicators in impact assessment for characterization factors.
             If False, a dict of the indicators that satisfy the search criteria
             will be returned.
-        method: str
+        method: str or Iterable
             Impact assessment method of the indicator (e.g., TRACI).
-        category: str
+        method_exclude: str or Iterable
+            Strings to be excluded from the method field.
+        category: str or Iterable
             Category of the indicator (e.g., environmental impact).
-        indicator: str
+        category_exclude: str or Iterable
+            Strings to be excluded from the category field.
+        indicator: str or Iterable
             Name of the indicator (e.g., global warming).
+        indicator_exclude: str or Iterable
+            Strings to be excluded from the indicator field.
 
         Tip
         ---
-        Leave the method, category, or indicator field as blank (i.e., '')
-        if want all of the options. E.g., load_indicators() will return
+        Leave all fields as blank (i.e., '') if want all of the options.
+        E.g., load_indicators() will return
         all indicators available in the package (800+ in total).
         
         '''
+        indicators = bw2.methods.list
+        indicators = _filter_inds(indicators, (method, category, indicator), True)
+        indicators = _filter_inds(indicators, 
+                                  (method_exclude, category_exclude, indicator_exclude),
+                                  False)
         
-        indicators = set(ind for ind in bw2.methods if (
-            method in ind[0] and
-            category in ind[1] and
-            indicator in ind[2]
-            ))
+        # for n, incl in enumerate((method, category, indicator)):
+        #     if incl:
+        #         if isinstance(incl, str):
+        #             incl = (incl, str)
+        #         elif not isinstance(incl, Iterable):
+        #             raise TypeError(f'"{incl}" can only be str or iterable, ' \
+        #                             f'not {type(incl).__name__}.')
+        #         indicators = [ind for ind in indicators if incl in ind[n]]
+        
+        # for n, excl in enumerate((method_exclude, category_exclude, indicator_exclude)):
+        #     if excl:
+        #         if isinstance(excl, str):
+        #             excl = (excl, str)
+        #         elif not isinstance(excl, Iterable):
+        #             raise TypeError(f'"{excl}" can only be str or iterable, ' \
+        #                             f'not {type(excl).__name__}.')
+        #         indicators = [ind for ind in indicators if not excl in ind[n]]
+        
+        # method_exclude = 'NoExclude' if not method_exclude else method_exclude
+        # category_exclude = 'NoExclude' if not category_exclude else category_exclude
+        # indicator_exclude = 'NoExclude' if not indicator_exclude else indicator_exclude
+        
+        # indicators = set(ind for ind in bw2.methods if (
+        #     method.lower() in ind[0].lower() and
+        #     method_exclude.lower() not in ind[0].lower() and
+        #     category.lower() in ind[1].lower() and
+        #     category_exclude.lower() not in ind[1].lower() and
+        #     indicator.lower() in ind[2].lower() and
+        #     indicator_exclude.lower() not in ind[2].lower()
+        #     ))
         
         if add:
-            self._indicators = self._indicators.union(indicators)
-            print(f'{len(indicators)} indicator(s) loaded/updated.')
+            self._indicators = self._indicators.union(set(indicators))
+            msg = 'indicator' if len(indicators) > 1 else 'indicators'
+            print(f'{len(indicators)} {msg} loaded/updated.')
 
         else:
             return indicators
@@ -142,21 +205,13 @@ class CFgetter:
         show : bool
             Whether to print the detailed information associated with the activities.
         kwargs :
-            Other keyword arguments that will be passed to ```Brightway2-data``.
+            Other keyword arguments that will be passed to ```bw2data``.
         
         See Also
         --------
-        :func:`search` in `Brightway2-data SQLiteBackend <https://2.docs.brightway.dev/technical/bw2data.html#default-backend-databases-stored-in-a-sqlite-database>`_
+        :func:`search` in `bw2data SQLiteBackend <https://2.docs.brightway.dev/technical/bw2data.html#default-backend-databases-stored-in-a-sqlite-database>`_
 
         '''
-        
-        #!!!! PAUSED! NEED TO IMPROVE SEARCH ABILITY
-        
-        
-        
-        
-        
-
         activities = self.database.search(string, limit=limit, **kwargs)
         act_dct = {act.as_dict()['name']: act for act in activities}
 
@@ -166,7 +221,8 @@ class CFgetter:
  
         if add:
             self._activities.update(act_dct)
-            print(f'{len(act_dct)} activity(ies) loaded/updated.')
+            msg = 'activities' if len(act_dct) > 1 else 'activity'
+            print(f'{len(act_dct)} {msg} loaded/updated.')
 
         else:
             return act_dct
@@ -236,19 +292,80 @@ class CFgetter:
         '''
         
         kind_lower = kind.lower()
+        num = 0
         if kind_lower in ('indicator', 'indicators'):
             for k in keys:
                 self._indicators.remove(k)
+                num += 1
+            msg = 'indicators' if num > 1 else 'indicator'
 
         elif kind_lower in ('activity', 'activities'):
             for k in keys:
                 self._activities.pop(k)
-
+                num += 1
+            msg = 'activities' if num > 1 else 'activity'
+        
         else:
             raise ValueError('kind can only be "indicator" or "activity", ' \
                              f'not "{kind}".')
+    
+        print(f'Successfully removed {num} {msg}.')
+    
+    def export_indicators(self, indicators=(), aliases={}, descriptions={},
+                          show=False, path=''):
+        '''
+        Show information about the loaded impact indicators in a :class`pandas.DataFrame`,
+        the :class`pandas.DataFrame` will be exported to the path if provided.
+        
+        Parameters
+        ----------
+        indicators : iterable
+            Keys of the indicators in the ``indicators`` property.
+            Will be defaulted to all loaded indicators if not provided.
+        aliases : dict
+            Keys should be the keys of the indicators in the ``indicators`` property,
+            values should be the aliases of the indicators.
+        descriptions : dict
+            Keys should be the keys of the indicators in the ``indicators`` property,
+            values should be the descriptions of the indicators.
+        show : bool
+            Whether to print the generated :class:`pandas.DataFrame` in the console.
+        path : str
+            If provided, the :class:`pandas.DataFrame` will be saved to the given file path.
+        
+        Returns
+        -------
+        df: :class:`pandas.DataFrame`
+            Characterization factors.
+            
+        Tip
+        ---
+        The exported file can be directly import into QSD packages to create
+        :class:`ImpactIndicator` items.
         
         
+        '''
+        if not self.indicators:
+            raise ValueError('No loaded indicators.')
+        if not set(indicators).issubset(self.indicators):
+            raise ValueError('Provided indicator(s) not all loaded.')
+        
+        inds = indicators if indicators else self.indicators
+
+        df = pd.DataFrame({
+            'alias': [aliases[ind] if ind in aliases.keys() else '' for ind in inds],
+            'unit': [bw2.methods.get(i)['unit'] for i in inds],
+            'method': [ind[0] for ind in inds],
+            'category': [ind[1] for ind in inds],
+            'description': [descriptions[ind] if ind in descriptions.keys() else '' for ind in inds]
+            },
+            index=pd.Index(data=[format_name(ind[2]) for ind in inds], name='indicator'))
+        
+        export_df(df, path, show)
+
+        return df
+        
+    
 
     def get_CF(self, indicators=(), activities=(), show=False, path=''):
         '''
@@ -269,7 +386,7 @@ class CFgetter:
         
         Returns
         -------
-        [:class:`pandas.DataFrame`]
+        df: :class:`pandas.DataFrame`
             Characterization factors.
         
         Tip
@@ -318,17 +435,7 @@ class CFgetter:
         if show:
             print(df)
 
-        if path:
-            if path.endswith('.tsv'):
-                df.to_csv(path, sep='\t')
-            elif path.endswith('.csv'):
-                df.to_csv(path)
-            elif (path.endswith('.xlsx') or path.endswith('.xls')):
-                df.to_excel(path)
-            else:
-                extension = path.split('.')[-1]
-                raise ValueError('Only "tsv", "csv", "xlsx", or "xls" files are supported, ' \
-                                 f'not {extension}.')
+        export_df(df, path, show)
 
         return df
 

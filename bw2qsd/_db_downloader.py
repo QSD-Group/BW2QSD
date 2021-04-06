@@ -23,8 +23,7 @@ from bw2io import importers, strategies
 
 '''
 TODO:
-    JSON conversion
-    Add USLCI, etc.
+    JSON conversion, then add USLCI, etc.
 '''
 
 

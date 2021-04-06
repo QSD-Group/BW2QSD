@@ -80,11 +80,13 @@ def remove_setups_pickle():
         warn(f'"setups.pickle" not found in directory "{projects.dir}", no file removed.',
              stacklevel=2)
 
+from .utils import *
 from ._db_downloader import *
 from ._cf_getter import *
 
 from . import (
     _exceptions,
+    utils,
     _db_downloader,
     _cf_getter,    
     )
