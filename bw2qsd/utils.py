@@ -12,9 +12,31 @@ Please refer to https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
 for license details.
 '''
 
-__all__ = ('export_df','format_name',)
+__all__ = ('remove_setups_pickle', 'export_df','format_name',)
 
 import os
+from warnings import warn
+
+def remove_setups_pickle():
+    '''
+    Remove the "setups.pickle" file in the project directory,
+    outdated file will cause an error the next time ``BW2QSD`` is loaded.
+    
+    .. note::
+        
+        Only run this function before you quitting the program.
+    
+    '''
+    
+    from bw2data import projects
+    setup_path = os.path.join(projects.dir, 'setups.pickle')
+    try:
+        os.remove(setup_path)
+        print(f'File "setups.pickle" successfully removed from directory "{projects.dir}".')
+    except FileNotFoundError:
+        warn(f'"setups.pickle" not found in directory "{projects.dir}", no file removed.',
+             stacklevel=2)
+
 
 def export_df(df, path, show=False):
     if show:
@@ -31,9 +53,9 @@ def export_df(df, path, show=False):
             extension = path.split('.')[-1]
             raise ValueError('Only "tsv", "csv", "xlsx", or "xls" files are supported, ' \
                              f'not {extension}.')
-            
-    file_path, file_name = os.path.split(path)
-    print(f'File "{file_name}" has been exported to {file_path}.')
+
+        file_path, file_name = os.path.split(path)
+        print(f'File "{file_name}" has been exported to "{file_path}".')
     
 
 def format_name(name):

@@ -18,7 +18,6 @@ try:
 except pkg_resources.DistributionNotFound:
     __version__ = None
 
-from warnings import warn
 from ._exceptions import *
 
 try:
@@ -28,7 +27,7 @@ except Exception as e:
     if 'ImportError' in name and "cannot import name 'databases'" in msg:
         raise BW2Error('This error is due to an outdated pickle file, ' \
                         'to get more instructions, update your ``bw2data`` package ' \
-                        'according to https://github.com/brightway-lca/brightway2-data/commit/9c52e76c84bfa7d3d9719da152c0616d4039a3c3')
+                        'according to https://github.com/brightway-lca/brightway2-data/commit/9c52e76c84bfa7d3d9719da152c0616d4039a3c3.')
     elif 'PickleError' in name and 'setups.pickle' in msg:
         print('\n')
         print('===================================================================')
@@ -60,26 +59,6 @@ if 'biosphere3' not in bw2.databases:
     bw2.bw2setup()
 
 
-def remove_setups_pickle():
-    '''
-    Remove the "setups.pickle" file in the project directory,
-    outdated file will cause an error the next time ``BW2QSD`` is loaded.
-    
-    .. note::
-        
-        Only run this function before you quitting the program.
-    
-    '''
-    
-    from bw2data import projects
-    setup_path = os.path.join(projects.dir, 'setups.pickle')
-    try:
-        os.remove(setup_path)
-        print('File "setups.pickle" successfully removed from directory "{projects.dir}".')
-    except FileNotFoundError:
-        warn(f'"setups.pickle" not found in directory "{projects.dir}", no file removed.',
-             stacklevel=2)
-
 from .utils import *
 from ._db_downloader import *
 from ._cf_getter import *
@@ -92,9 +71,9 @@ from . import (
     )
 
 __all__ = (
+    'remove_setup_pickle',
     *_db_downloader.__all__,
     *_cf_getter.__all__,
-    'remove_setup_pickle',
     )
 
 

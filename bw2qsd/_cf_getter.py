@@ -80,14 +80,17 @@ class CFgetter:
     
     '''
 
+    __slots__ = ('name', '_database', '_indicators', '_activities', '_CFs')
+
     def __init__(self, name):
         self.name = name
         self._database = None
         self._indicators = set()
         self._activities = {}
-        self._ind_aliases = {}
-        self._act_aliases = {}
+        self._CFs = None
 
+    def __repr__(self):
+        return f'<CFgetter: {self.name}>'
 
     def load_database(self, database):
         '''
@@ -140,48 +143,17 @@ class CFgetter:
         E.g., load_indicators() will return
         all indicators available in the package (800+ in total).
         
-        '''
+        '''       
         indicators = bw2.methods.list
         indicators = _filter_inds(indicators, (method, category, indicator), True)
         indicators = _filter_inds(indicators, 
                                   (method_exclude, category_exclude, indicator_exclude),
                                   False)
-        
-        # for n, incl in enumerate((method, category, indicator)):
-        #     if incl:
-        #         if isinstance(incl, str):
-        #             incl = (incl, str)
-        #         elif not isinstance(incl, Iterable):
-        #             raise TypeError(f'"{incl}" can only be str or iterable, ' \
-        #                             f'not {type(incl).__name__}.')
-        #         indicators = [ind for ind in indicators if incl in ind[n]]
-        
-        # for n, excl in enumerate((method_exclude, category_exclude, indicator_exclude)):
-        #     if excl:
-        #         if isinstance(excl, str):
-        #             excl = (excl, str)
-        #         elif not isinstance(excl, Iterable):
-        #             raise TypeError(f'"{excl}" can only be str or iterable, ' \
-        #                             f'not {type(excl).__name__}.')
-        #         indicators = [ind for ind in indicators if not excl in ind[n]]
-        
-        # method_exclude = 'NoExclude' if not method_exclude else method_exclude
-        # category_exclude = 'NoExclude' if not category_exclude else category_exclude
-        # indicator_exclude = 'NoExclude' if not indicator_exclude else indicator_exclude
-        
-        # indicators = set(ind for ind in bw2.methods if (
-        #     method.lower() in ind[0].lower() and
-        #     method_exclude.lower() not in ind[0].lower() and
-        #     category.lower() in ind[1].lower() and
-        #     category_exclude.lower() not in ind[1].lower() and
-        #     indicator.lower() in ind[2].lower() and
-        #     indicator_exclude.lower() not in ind[2].lower()
-        #     ))
-        
+
         if add:
             self._indicators = self._indicators.union(set(indicators))
             msg = 'indicator' if len(indicators) > 1 else 'indicators'
-            print(f'{len(indicators)} {msg} loaded/updated.')
+            print(f'\n{len(indicators)} {msg} loaded/updated.')
 
         else:
             return indicators
@@ -212,6 +184,12 @@ class CFgetter:
         :func:`search` in `bw2data SQLiteBackend <https://2.docs.brightway.dev/technical/bw2data.html#default-backend-databases-stored-in-a-sqlite-database>`_
 
         '''
+        # stdout = sys.stdout
+        # sys.stdout = open(os.devnull, 'w')
+        # sys.stdout = stdout
+        # import io
+        # f = io.StringIO()
+
         activities = self.database.search(string, limit=limit, **kwargs)
         act_dct = {act.as_dict()['name']: act for act in activities}
 
@@ -222,20 +200,21 @@ class CFgetter:
         if add:
             self._activities.update(act_dct)
             msg = 'activities' if len(act_dct) > 1 else 'activity'
-            print(f'{len(act_dct)} {msg} loaded/updated.')
+            print(f'{len(act_dct)} {msg} loaded/updated.\n')
 
         else:
             return act_dct
 
-    def show_activity(self, activity):
+    def show_activity(self, activity, **kwargs):
         '''
         Show detailed description about an activity.
         
         Parameters
         ----------
         activity : str or :class:`Activity`
-            Name of the activity as str, or the :class:`Activity` in ``Brightway2-data``.
-
+            Name of the activity as str, or the :class:`Activity` in ``bw2data``.
+        kwargs :
+            Other keyword arguments that will be passed to ```bw2data``.
 
         .. note::
             
@@ -249,10 +228,9 @@ class CFgetter:
                 activities = [self.activities[activity]]
             except KeyError:
                 try:
-                    activity = self._act_aliases[activity]
                     activities = [self.activities[activity]]
                 except KeyError:
-                    activities = self.database.search(activity)
+                    activities = self.database.search(activity, **kwargs)
                     if not activities:
                         raise ValueError(f'No search results for "{activity}".')
         
@@ -436,9 +414,44 @@ class CFgetter:
             print(df)
 
         export_df(df, path, show)
+        self._CFs = df
 
         return df
 
+    def copy(self, name, omit=()):
+        '''
+        Return a copy of the :class:`CFgetter`.
+        
+        .. note:
+            
+            ``CFs`` is not copied.
+        
+        
+        Parameters
+        ----------
+        name : str
+            Name of the copy.
+        omit: str or Iterable
+            Property(ies) not to be copied.
+        
+        '''
+        new = self.__class__.__new__(self.__class__)
+        new.name = name
+        new._CFs = None
+        if isinstance(omit, str):
+            omit = (omit,)
+        omit = (*(f'_{o}' for o in omit), 'name', '_CFs')
+        
+        for s in self.__slots__:
+            if not s in omit:
+                if s == '_database':
+                    new._database = self._database
+                else:
+                    setattr(new, s, getattr(self, s).copy())
+        
+        return new
+
+    __copy__ = copy
 
     @property
     def available_databases(self):
@@ -469,5 +482,12 @@ class CFgetter:
     def activities(self, i):
         raise AttributeError('Use ``load_activities``/``remove`` to add/remove activities.')
 
-
+    @property
+    def CFs(self):
+        '''Results from :func:`get_CF`.'''
+        if not self._CFs is None:
+            return self._CFs
+        else:
+            try: return self.get_CF()
+            except: return
 
