@@ -17,14 +17,14 @@ from setuptools import setup
 setup(
     name='bw2qsd',
     packages=['bw2qsd'],
-    version='0.0.6',
+    version='0.0.8',
     license='UIUC',
     author='Yalin Li',
     author_email='zoe.yalin.li@gmail.com',
     description='Bridging Brightway2 and QSD packages for LCA',
     long_description=open('README.rst').read(),
     url="https://github.com/QSD-Group/BW2QSD",
-    install_requires=['eidl', ],
+    install_requires=['eidl', 'xlrd<=1.2.0'],
     package_data=
         {'bw2qsd': [
                     'sample_output.tsv',

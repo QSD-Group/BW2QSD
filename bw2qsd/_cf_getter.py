@@ -153,7 +153,7 @@ class CFgetter:
         if add:
             self._indicators = self._indicators.union(set(indicators))
             msg = 'indicator' if len(indicators) > 1 else 'indicators'
-            print(f'\n{len(indicators)} {msg} loaded/updated.')
+            print(f'\n{len(indicators)} {msg} loaded/updated for {self.name}.')
 
         else:
             return indicators
@@ -184,12 +184,6 @@ class CFgetter:
         :func:`search` in `bw2data SQLiteBackend <https://2.docs.brightway.dev/technical/bw2data.html#default-backend-databases-stored-in-a-sqlite-database>`_
 
         '''
-        # stdout = sys.stdout
-        # sys.stdout = open(os.devnull, 'w')
-        # sys.stdout = stdout
-        # import io
-        # f = io.StringIO()
-
         activities = self.database.search(string, limit=limit, **kwargs)
         act_dct = {act.as_dict()['name']: act for act in activities}
 
@@ -200,7 +194,7 @@ class CFgetter:
         if add:
             self._activities.update(act_dct)
             msg = 'activities' if len(act_dct) > 1 else 'activity'
-            print(f'{len(act_dct)} {msg} loaded/updated.\n')
+            print(f'{len(act_dct)} {msg} loaded/updated for {self.name}.\n')
 
         else:
             return act_dct
@@ -287,7 +281,7 @@ class CFgetter:
             raise ValueError('kind can only be "indicator" or "activity", ' \
                              f'not "{kind}".')
     
-        print(f'Successfully removed {num} {msg}.')
+        print(f'Successfully removed {num} {msg} from {self.name}.')
     
     def export_indicators(self, indicators=(), aliases={}, descriptions={},
                           show=False, path=''):
