@@ -17,7 +17,7 @@ from setuptools import setup
 setup(
     name='bw2qsd',
     packages=['bw2qsd'],
-    version='0.0.8',
+    version='0.0.9',
     license='UIUC',
     author='Yalin Li',
     author_email='zoe.yalin.li@gmail.com',
@@ -29,7 +29,6 @@ setup(
         {'bw2qsd': [
                     'sample_output.tsv',
                     'Tutorial.ipynb',
-#                    'data/sanunit_data/*',
                     ]},
     platforms=['Windows', 'Mac', 'Linux'],
     classifiers=['License :: OSI Approved :: University of Illinois/NCSA Open Source License',
