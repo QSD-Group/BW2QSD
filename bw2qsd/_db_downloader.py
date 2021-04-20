@@ -204,7 +204,7 @@ class DataDownloader:
         
         See Also
         --------
-        The `FORWARST project <https://lca-net.com/projects/show/forwast/>`_.
+        The `FORWAST project <https://lca-net.com/projects/show/forwast/>`_.
         
         '''
         if not _check_db('FORWAST', True):
