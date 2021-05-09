@@ -17,7 +17,7 @@ from setuptools import setup
 setup(
     name='bw2qsd',
     packages=['bw2qsd'],
-    version='0.0.10',
+    version='0.0.11',
     license='UIUC',
     author='Yalin Li',
     author_email='zoe.yalin.li@gmail.com',
