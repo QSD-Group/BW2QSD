@@ -4,7 +4,7 @@ The BW2QSD project is under the University of Illinois/NCSA Open Source License
 
 University of Illinois/NCSA Open Source License
 
-Copyright (c) [2020-2021] Yalin Li. All rights reserved.
+Copyright (c) [2020-2022] Yalin Li. All rights reserved.
 
 Developed by: Yalin Li
 

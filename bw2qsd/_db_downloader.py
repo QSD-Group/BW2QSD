@@ -17,7 +17,7 @@ for license details.
 
 import os, appdirs, subprocess, shutil, requests, functools
 import brightway2 as bw2
-import eidl
+from . import eidl
 from zipfile import ZipFile
 from bw2io import importers, strategies
 

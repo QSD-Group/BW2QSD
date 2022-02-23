@@ -18,6 +18,8 @@ try:
 except pkg_resources.DistributionNotFound:
     __version__ = None
 
+bw2_version = pkg_resources.get_distribution('brightway2').version
+
 from ._exceptions import *
 
 try:
@@ -35,7 +37,7 @@ except Exception as e:
         print('===================================================================')
         print('\n')
         print(e, '\n')
-    
+
         print('Would you like to automatically remove the file? ' \
               'If yes, the file will be permanently removed ' \
               '(i.e., cannot be recovered from Trash or Recycle Bin).')
@@ -43,17 +45,17 @@ except Exception as e:
              path = msg.split("'")[-2]
              if not 'setups.pickle' in path:
                  print('\nError in parsing directory, for cautious purpose, ' \
-                       f'please mannual remove the file in {msg} (always backup).\n')
-                 raise e
+                       f'please manually remove the file in {msg} (always backup).\n')
+                 raise e from None
              else:
                  os.remove(path)
                  print('\nFile successfully removed. Please rerun the code.\n')
                  sys.exit()
-    
+
         else:
-            raise e
+            raise e from None
     else:
-        raise e
+        raise e from None
 
 if 'biosphere3' not in bw2.databases:
     bw2.bw2setup()
@@ -67,16 +69,12 @@ from . import (
     _exceptions,
     utils,
     _db_downloader,
-    _cf_getter,    
+    _cf_getter,
     )
 
 __all__ = (
+    'bw2_version',
     'remove_setup_pickle',
     *_db_downloader.__all__,
     *_cf_getter.__all__,
     )
-
-
-
-
-
