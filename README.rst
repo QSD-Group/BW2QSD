@@ -21,6 +21,11 @@ What is ``BW2QSD``?
 
 Installation
 ------------
+**Note**
+
+For detailed instructions, please refer to the `tutorials <https://github.com/QSD-Group/BW2QSD/blob/main/bw2qsd/tutorials/>`_. It is recommended to create a separate conda environment.
+
+
 The package can be downloaded from `PyPI <https://pypi.org/project/bw2qsd/>`_.
 
 If you use pip:
@@ -35,11 +40,6 @@ To get the git version (you can optionally use the depth flag to choose how many
 .. code:: bash
 
     git clone https://github.com/QSD-Group/BW2QSD.git --depth=1
-
-
-Tutorial
---------
-Please refer to the `tutorials <https://github.com/QSD-Group/BW2QSD/blob/main/bw2qsd/tutorials/>`_ on GitHub for how to get started.
 
 
 Author and Contributing
