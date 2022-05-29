@@ -5,7 +5,7 @@
 BW2QSD: Bridging Brightway2 and QSD packages for LCA
 
 This module is developed by:
-    Yalin Li <zoe.yalin.li@gmail.com>
+    Yalin Li <mailto.yalin.li@gmail.com>
 
 Part of this module is based on the BioSTEAM-LCA package:
 https://github.com/scyjth/biosteam_lca

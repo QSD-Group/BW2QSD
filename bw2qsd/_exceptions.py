@@ -5,7 +5,7 @@
 BW2QSD: Bridging Brightway2 and QSD packages for LCA
 
 This module is developed by:
-    Yalin Li <zoe.yalin.li@gmail.com>
+    Yalin Li <mailto.yalin.li@gmail.com>
 
 This module is under the University of Illinois/NCSA Open Source License.
 Please refer to https://github.com/QSD-Group/BW2QSD/blob/main/LICENSE.txt
