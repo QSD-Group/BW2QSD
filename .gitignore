@@ -72,4 +72,4 @@ surfaces
 # Others #
 ##########
 *.sh
-**/*temp*
+**/*tmp*
