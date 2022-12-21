@@ -137,8 +137,8 @@ class DataDownloader:
         if not _check_db('ecoinvent'):
             return
 
-        path = _make_dir(path, 'ecoinvent')
-        downloader = eidl.EcoinventDownloader()
+        path = path or _make_dir(path, 'ecoinvent')
+        downloader = eidl.EcoinventDownloader(outdir=path)
         downloader.run()
 
         print('\nUnzipping data...')
@@ -150,12 +150,14 @@ class DataDownloader:
             os.rmdir(extracted_path)
         except FileNotFoundError:
             pass
-        
-        extract_cmd = ['7za', 'x', downloader.out_path, f'-o{extracted_path}']
-        # # do not use downloader.extract, it may not work on Mac app 
-        # downloader.extract(target_dir=path)
-        
-        self.extraction_process = subprocess.Popen(extract_cmd)
+
+        try:
+            extract_cmd = ['py7zr', 'x', downloader.out_path, extracted_path]
+            self.extraction_process = subprocess.Popen(extract_cmd)
+        except: # Old code, not sure if Mac needs this
+            extract_cmd = ['7za', 'x', downloader.out_path, f'-o{extracted_path}']
+            self.extraction_process = subprocess.Popen(extract_cmd)
+            
         self.extraction_process.wait()
 
         db_name = 'ecoinvent_' + db_append
