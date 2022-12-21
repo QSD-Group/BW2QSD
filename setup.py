@@ -17,18 +17,19 @@ from setuptools import setup
 setup(
     name='bw2qsd',
     packages=['bw2qsd'],
-    version='0.1.2',
+    version='0.1.3',
     license='UIUC',
     author='Yalin Li',
-    author_email='zoe.yalin.li@gmail.com',
+    author_email='mailto.yalin.li@gmail.com',
     description='Bridging Brightway2 and QSD packages for LCA',
     long_description=open('README.rst', encoding='utf-8').read(),
     url="https://github.com/QSD-Group/BW2QSD",
     install_requires=['brightway2==2.4.2', 'beautifulsoup4',],
     package_data=
-        {'bw2qsd': [
-            'eidl/*',
-                    ]},
+        {'bw2qsd': 
+            [
+                'eidl/*',
+                ]},
     platforms=['Windows', 'Mac', 'Linux'],
     classifiers=['License :: OSI Approved :: University of Illinois/NCSA Open Source License',
                  'Environment :: Console',
