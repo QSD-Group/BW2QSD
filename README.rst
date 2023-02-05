@@ -44,7 +44,7 @@ To get the git version (you can optionally use the depth flag to choose how many
 
 Author and Contributing
 -----------------------
-Author: `Yalin Li <https://qsdsan.readthedocs.io/en/latest/authors/Yalin_Li.html>`_
+Authors: `Yalin Li <https://qsdsan.readthedocs.io/en/latest/authors/Yalin_Li.html>`_; `Joy Zhang <https://qsdsan.readthedocs.io/en/latest/authors/Joy_Zhang.html>`_
 
 Please refer to the `Contributing to QSDsan <https://qsdsan.readthedocs.io/en/latest/CONTRIBUTING.html>`_ section of the documentation for instructions and guidelines.
 
