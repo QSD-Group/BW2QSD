@@ -282,7 +282,8 @@ class CFgetter:
         print(f'Successfully removed {num} {msg} from {self.name}.')
 
     def export_indicators(self, indicators=(), aliases={}, descriptions={},
-                          name_formatter=None, show=False, path=''):
+                          name_formatter=None, alias_formatter=None,
+                          show=False, path=''):
         '''
         Show information about the loaded impact indicators in a :class`pandas.DataFrame`,
         the :class`pandas.DataFrame` will be exported to the path if provided.
@@ -321,10 +322,13 @@ class CFgetter:
             raise ValueError('Provided indicator(s) not all loaded.')
 
         inds = indicators if indicators else self.indicators
+        name_formatter = name_formatter or format_name
+        if alias_formatter is None:
+            alias_formatter = lambda ind: aliases.pop(ind, '')
 
         df = pd.DataFrame({
-            'indicator': [format_name(ind[2]) for ind in inds],
-            'alias': [aliases[ind] if ind in aliases.keys() else '' for ind in inds],
+            'indicator': [name_formatter(ind[2]) for ind in inds],
+            'alias': [alias_formatter(ind) for ind in inds],
             'unit': [bw2.methods.get(i)['unit'] for i in inds],
             'method': [ind[0] for ind in inds],
             'category': [ind[1] for ind in inds],
