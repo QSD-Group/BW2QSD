@@ -1,6 +1,5 @@
 # Needed by bw2qsd
 brightway2==2.4.2
-beautifulsoup4
 py7zr
 
 # Packages for testing

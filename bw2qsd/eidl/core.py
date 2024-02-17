@@ -29,10 +29,10 @@ import string
 import tempfile
 import getpass
 import subprocess
-
+import json
 import requests
-from bs4 import BeautifulSoup
-import brightway2 as bw
+from bw2io import SingleOutputEcospold2Importer, bw2setup
+from bw2data import projects, databases
 
 from .storage import eidlstorage
 
@@ -45,6 +45,8 @@ class EcoinventDownloader:
         self.version = version
         self.system_model = system_model
         self.outdir = outdir
+        self.access_token = None
+        self.refresh_token = None
 
     def run(self):
         if self.check_stored():
@@ -83,20 +85,40 @@ class EcoinventDownloader:
         return un, pw
 
     def login(self):
-        self.session = requests.Session()
-        logon_url = 'https://v33.ecoquery.ecoinvent.org/Account/LogOn'
-        post_data = {'UserName': self.username,
-                     'Password': self.password,
-                     'IsEncrypted': 'false',
-                     'ReturnUrl': '/'}
+        sso_url='https://sso.ecoinvent.org/realms/ecoinvent/protocol/openid-connect/token'
+        post_data = {'username': self.username,
+                     'password': self.password,
+                     'client_id': 'apollo-ui',
+                     'grant_type': 'password'}
         try:
-            self.session.post(logon_url, post_data, timeout=20)
+            response = requests.post(sso_url, post_data, timeout=20)
         except (requests.ConnectTimeout, requests.ReadTimeout, requests.ConnectionError) as e:
             self.handle_connection_timeout()
             raise e
 
-        success = bool(self.session.cookies)
-        self.login_success(success)
+        if response.ok:
+            tokens = json.loads(response.text)
+            self.access_token = tokens['access_token']
+            self.refresh_token = tokens['refresh_token']
+
+        self.login_success(response.ok)
+        
+    def refresh_tokens(self):
+        if self.refresh_token is None:
+            return
+
+        sso_url='https://sso.ecoinvent.org/realms/ecoinvent/protocol/openid-connect/token'
+        post_data = {'client_id': 'apollo-ui',
+                     'grant_type': 'refresh_token',
+                     'refresh_token': self.refresh_token}
+        response = requests.post(sso_url, post_data, timeout=20)
+
+        if response.ok:
+            tokens = json.loads(response.text)
+            self.access_token = tokens['access_token']
+            self.refresh_token = tokens['refresh_token']
+        else:
+            self.login()
 
     def login_success(self, success):
         if not success:
@@ -115,16 +137,21 @@ class EcoinventDownloader:
             )
 
     def get_available_files(self):
-        files_url = 'https://v33.ecoquery.ecoinvent.org/File/Files'
+        files_url = 'https://api.ecoquery.ecoinvent.org/files'
+        self.refresh_tokens()
+        auth_header = {'Authorization': f'Bearer {self.access_token}'}
         try:
-            files_res = self.session.get(files_url, timeout=20)
+            files_res = requests.get(files_url, headers=auth_header, timeout=20)
         except (requests.ConnectTimeout, requests.ReadTimeout, requests.ConnectionError) as e:
             self.handle_connection_timeout()
             raise e
-        soup = BeautifulSoup(files_res.text, 'html.parser')
-        file_list = [l for l in soup.find_all('a', href=True) if
-                     l['href'].startswith('/File/File?')]
-        link_dict = {f.contents[0]: f['href'] for f in file_list}
+
+        files_raw = json.loads(files_res.text)
+        link_dict = dict()
+        for version in files_raw:
+            for release in version['releases']:
+                for rf in release['release_files']:
+                    link_dict[rf['name']] = rf['uuid']
         link_dict = {
             k.replace('-', ''):v for k, v in link_dict.items() if k.startswith('ecoinvent ') and
             k.endswith('ecoSpold02.7z') and not 'lc' in k.lower()
@@ -163,10 +190,13 @@ class EcoinventDownloader:
         return dbkey
 
     def download(self):
-        url = 'https://v33.ecoquery.ecoinvent.org'
         db_key = (self.version, self.system_model)
+        url = f'https://api.ecoquery.ecoinvent.org/files/r/{self.db_dict[db_key]}'
+        self.refresh_tokens()
+        auth_header = {'Authorization': f'Bearer {self.access_token}'}
         try:
-            file_content = self.session.get(url + self.db_dict[db_key], timeout=60).content
+            s3_link = json.loads(requests.get(url, headers=auth_header, timeout=20).text)
+            file_content = requests.get(s3_link['download_url'], timeout=60).content
         except (requests.ConnectTimeout, requests.ReadTimeout, requests.ConnectionError) as e:
             self.handle_connection_timeout()
             raise e
@@ -179,11 +209,11 @@ class EcoinventDownloader:
         with open(self.out_path, 'wb') as out_file:
             out_file.write(file_content)
 
-    def extract(self, target_dir):
+    def extract(self, target_dir, **kwargs):
         extract_cmd = ['py7zr', 'x', self.out_path, target_dir]
         try:
-            self.extraction_process = subprocess.Popen(extract_cmd)
-            self.extraction_process.wait()
+            self.extraction_process = subprocess.Popen(extract_cmd, **kwargs)
+            return self.extraction_process.wait()
         except FileNotFoundError as e:
             if "PYCHARM_HOSTED" in os.environ:
                 print('It appears the EcoInventDownLoader is run from PyCharm. ' +
@@ -221,17 +251,17 @@ def get_ecoinvent(db_name=None, auto_write=False, download_path=None, store_down
         if not db_name:
             db_name = downloader.file_name.replace('.7z', '')
         datasets_path = os.path.join(td, 'datasets')
-        importer = bw.SingleOutputEcospold2Importer(datasets_path, db_name)
+        importer = SingleOutputEcospold2Importer(datasets_path, db_name)
 
-    if 'biosphere3' not in bw.databases:
+    if 'biosphere3' not in databases:
         if auto_write:
-            bw.bw2setup()
+            bw2setup()
         else:
             print('No biosphere database present in your current ' +
-                  'project: {}'.format(bw.projects.current))
+                  'project: {}'.format(projects.current))
             print('You can run "bw2setup()" if this is a new project. Run it now?')
             if input('[y]/n ') in {'y', ''}:
-                bw.bw2setup()
+                bw2setup()
             else:
                 return
 
@@ -240,11 +270,11 @@ def get_ecoinvent(db_name=None, auto_write=False, download_path=None, store_down
 
     if auto_write and not unlinked:
         print('\nWriting database {} in project {}'.format(
-            db_name, bw.projects.current))
+            db_name, projects.current))
         importer.write_database()
     else:
         print('\nWrite database {} in project {}?'.format(
-            db_name, bw.projects.current))
+            db_name, projects.current))
         if input('[y]/n ') in {'y', ''}:
             importer.write_database()
 
