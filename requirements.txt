@@ -5,3 +5,10 @@ py7zr
 # Packages for testing
 pytest
 nbval
+
+# Versions of brightway2 requires that work
+# bw2analyzer==0.10
+# bw2calc==1.8.1
+# bw2data==3.6.6
+# bw2io==0.8.8
+# bw2parameters==1.1.0
